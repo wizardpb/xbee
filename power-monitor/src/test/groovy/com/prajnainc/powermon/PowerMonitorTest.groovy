@@ -5,6 +5,7 @@ import static org.junit.Assert.*
 import org.junit.Before
 import org.junit.Test
 
+import com.prajnainc.xbee.Plotter
 import com.prajnainc.xbee.SampleProvider
 import com.rapplogic.xbee.api.wpan.RxResponseIoSample
 import com.rapplogic.xbee.util.IntArrayInputStream
@@ -13,7 +14,13 @@ class PowerMonitorTest extends GroovyTestCase {
 
 	PowerMonitor monitor
 	RxResponseIoSample mockResponse
-
+	Plotter plotter = [plot: {Integer analogValue -> 
+			Integer scaled = (analogValue - 512) * (80/1023)
+			int spaces = Math.min(40,40+scaled), stars = (int)scaled.abs()
+			String text = (' ' * spaces) + ("*" * (stars == 0 ? 1 : stars))
+			println text
+		}] as Plotter
+	
 	@Before
 	public void setUp() {
 		mockResponse = new RxResponseIoSample()
@@ -30,7 +37,9 @@ class PowerMonitorTest extends GroovyTestCase {
 		def sampleSource = [getSamples: { ->
 				return mockResponse.getSamples() as List
 			}] as SampleProvider
-		monitor = new PowerMonitor(sampleService: sampleSource)
+		
+		monitor = new PowerMonitor(sampleService: sampleSource, plotter: plotter)
+		
 		monitor.loop()
 	}
 
@@ -48,7 +57,7 @@ class PowerMonitorTest extends GroovyTestCase {
 		def sampleSource = [getSamples: { ->
 				return mockResponse.getSamples() as List
 			}] as SampleProvider
-		monitor = new PowerMonitor(sampleService: sampleSource)
+		monitor = new PowerMonitor(sampleService: sampleSource, plotter: plotter)
 		monitor.loop()
 	}
 
